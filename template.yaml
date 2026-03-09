@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Fruiting Crawler — EventBridge → Entrypoint Lambda → Parser Lambda → S3
+
+Globals:
+  Function:
+    Timeout: 60
+
+Resources:
+  # --- S3 Bucket ---
+  OutputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-output-${AWS::AccountId}"
+
+  # --- Parser Lambda (Docker) ---
+  # Receives url/selector/fileName, renders page with Puppeteer, converts to MD, uploads to S3
+  ParserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageUri: public.ecr.aws/b1e3i0g4/web-to-markdown:nodejs20-parser
+      Architectures:
+        - x86_64
+      Timeout: 300
+      MemorySize: 4096
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref OutputBucket
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref OutputBucket
+
+  # --- Entrypoint Lambda (Zip) ---
+  # Triggered by EventBridge every hour, checks for new articles, invokes Parser
+  EntrypointFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/entrypoint/
+      Handler: index.handler
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+      Timeout: 60
+      MemorySize: 128
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref OutputBucket
+          PARSER_FUNCTION_NAME: !Ref ParserFunction
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref OutputBucket
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ParserFunction
+      Events:
+        HourlyCheck:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 hour)
+            Description: "Check for new articles every hour"
+            Enabled: true
+            Input: |
+              {
+                "apiUrl": "https://api.fruiting.co.kr/api/v1/list/all?exclude_filter_code=menu_code:ads,menu_code:gallery&page=1&size=10",
+                "articleBaseUrl": "https://www.fruiting.co.kr/board/board-view?id=",
+                "selector": ".board-cont"
+              }
+
+Outputs:
+  ParserFunctionArn:
+    Description: "Parser Lambda Function ARN"
+    Value: !GetAtt ParserFunction.Arn
+  EntrypointFunctionArn:
+    Description: "Entrypoint Lambda Function ARN"
+    Value: !GetAtt EntrypointFunction.Arn
+  OutputBucketName:
+    Description: "S3 Bucket for parsed output"
+    Value: !Ref OutputBucket

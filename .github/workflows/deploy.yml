@@ -1,0 +1,57 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install root dev dependencies
+        run: npm install
+
+      - name: Install parser dependencies
+        run: npm install
+        working-directory: functions/parser
+
+      - name: Install entrypoint dependencies
+        run: npm install
+        working-directory: functions/entrypoint
+
+      - name: Run tests
+        run: npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/setup-sam@v2
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          # Public ECR auth endpoint requires us-east-1
+          aws-region: us-east-1
+
+      - name: Log in to public ECR
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Build
+        run: sam build
+
+      - name: Deploy
+        run: sam deploy --no-confirm-changeset

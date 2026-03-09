@@ -1,0 +1,6 @@
+node_modules
+.aws-sam
+samconfig.toml
+output.md
+.git
+.DS_Store

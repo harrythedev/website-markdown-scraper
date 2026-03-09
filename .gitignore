@@ -1,0 +1,9 @@
+node_modules/
+functions/*/node_modules/
+.aws-sam/
+samconfig.toml
+samconfig.toml.bak
+*.env
+.env*
+.DS_Store
+output.md

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"[0-9]\\\\{12\\\\}\" /Users/h/Code/poc --include=\"*.json\" --include=\"*.toml\" --include=\"*.yml\" --include=\"*.yaml\" --include=\"*.sh\" --include=\"Dockerfile*\" 2>/dev/null | grep -v node_modules)",
+      "Bash(grep -r \"docker\\\\|Docker\\\\|ecr\\\\|ECR\\\\|registry\\\\|image\" /Users/h/Code/poc --include=\"*.js\" --include=\"*.json\" 2>/dev/null | grep -v node_modules | head -20)"
+    ]
+  }
+}
