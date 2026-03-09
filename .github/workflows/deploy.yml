@@ -60,12 +60,17 @@ jobs:
 
       - name: Deploy
         run: |
-          sam deploy \
+          aws cloudformation package \
             --template-file template.yaml \
-            --stack-name fruiting-crawler \
-            --resolve-s3 \
+            --s3-bucket aws-sam-cli-managed-default-samclisourcebucket-cuujwkgw8mcs \
             --s3-prefix fruiting-crawler \
             --region us-east-1 \
-            --no-confirm-changeset \
-            --capabilities CAPABILITY_IAM \
+            --output-template-file packaged.yaml
+
+          aws cloudformation deploy \
+            --template-file packaged.yaml \
+            --stack-name fruiting-crawler \
+            --region us-east-1 \
+            --no-fail-on-empty-changeset \
+            --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
             --parameter-overrides ImageUri=public.ecr.aws/b1e3i0g4/web-to-markdown:${{ github.sha }}
