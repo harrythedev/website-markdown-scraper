@@ -50,8 +50,13 @@ jobs:
         with:
           registry-type: public
 
-      - name: Build
-        run: sam build
+      - name: Build and push image
+        run: |
+          docker build \
+            --platform linux/amd64 \
+            -t public.ecr.aws/b1e3i0g4/web-to-markdown:${{ github.sha }} \
+            ./functions/parser
+          docker push public.ecr.aws/b1e3i0g4/web-to-markdown:${{ github.sha }}
 
       - name: Deploy
         run: |
@@ -62,4 +67,4 @@ jobs:
             --region us-east-1 \
             --no-confirm-changeset \
             --capabilities CAPABILITY_IAM \
-            --image-repositories ParserFunction=public.ecr.aws/b1e3i0g4/web-to-markdown
+            --parameter-overrides ImageUri=public.ecr.aws/b1e3i0g4/web-to-markdown:${{ github.sha }}

@@ -3,6 +3,11 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   Fruiting Crawler — EventBridge → Entrypoint Lambda → Parser Lambda → S3
 
+Parameters:
+  ImageUri:
+    Type: String
+    Default: public.ecr.aws/b1e3i0g4/web-to-markdown:nodejs20-parser
+
 Globals:
   Function:
     Timeout: 60
@@ -20,7 +25,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       PackageType: Image
-      ImageUri: public.ecr.aws/b1e3i0g4/web-to-markdown:nodejs20-parser
+      ImageUri: !Ref ImageUri
       Architectures:
         - x86_64
       Timeout: 300
