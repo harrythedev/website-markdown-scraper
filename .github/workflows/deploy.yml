@@ -45,20 +45,22 @@ jobs:
           # Public ECR auth endpoint requires us-east-1
           aws-region: us-east-1
 
-      - name: Log in to public ECR
+      - name: Log in to private ECR
         uses: aws-actions/amazon-ecr-login@v2
-        with:
-          registry-type: public
 
       - name: Build and push image
+        env:
+          ECR_REPO: 170996870592.dkr.ecr.us-east-1.amazonaws.com/fruitingcrawler59e300c0/parserfunction8bf1608erepo
         run: |
           docker build \
             --platform linux/amd64 \
-            -t public.ecr.aws/b1e3i0g4/web-to-markdown:${{ github.sha }} \
+            -t $ECR_REPO:${{ github.sha }} \
             ./functions/parser
-          docker push public.ecr.aws/b1e3i0g4/web-to-markdown:${{ github.sha }}
+          docker push $ECR_REPO:${{ github.sha }}
 
       - name: Deploy
+        env:
+          ECR_REPO: 170996870592.dkr.ecr.us-east-1.amazonaws.com/fruitingcrawler59e300c0/parserfunction8bf1608erepo
         run: |
           aws cloudformation package \
             --template-file template.yaml \
@@ -73,4 +75,4 @@ jobs:
             --region us-east-1 \
             --no-fail-on-empty-changeset \
             --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
-            --parameter-overrides ImageUri=public.ecr.aws/b1e3i0g4/web-to-markdown:${{ github.sha }}
+            --parameter-overrides ImageUri=$ECR_REPO:${{ github.sha }}
