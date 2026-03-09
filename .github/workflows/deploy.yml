@@ -61,6 +61,7 @@ jobs:
       - name: Deploy
         run: |
           sam deploy \
+            --template-file template.yaml \
             --stack-name fruiting-crawler \
             --resolve-s3 \
             --s3-prefix fruiting-crawler \
